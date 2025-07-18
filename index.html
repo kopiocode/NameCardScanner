@@ -1,448 +1,354 @@
-import React, { useState, useRef } from 'react';
-import { Camera, Upload, User, Phone, Mail, Building, MapPin, Save, Trash2, Eye, Search, SortAsc, SortDesc, Calendar, X } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Card Scanner (HTML Demo)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        /* Optional: Basic styling if Tailwind doesn't cover everything or for custom adjustments */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+        #root {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top, not center vertically */
+            min-height: 100vh; /* Use min-height to allow content to push down */
+            padding: 20px; /* Add some padding around the content */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-const BusinessCardScanner = () => {
-  const [image, setImage] = useState(null);
-  const [contacts, setContacts] = useState([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [savedContacts, setSavedContacts] = useState([]);
-  const [showSaved, setShowSaved] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [selectedContact, setSelectedContact] = useState(null);
-  const fileInputRef = useRef(null);
-  const cameraInputRef = useRef(null);
+    <script type="text/babel">
+        // Your React component code goes here
+        const { useState, useRef, useEffect } = React;
 
-  const processImage = async (imageFile) => {
-    setIsProcessing(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const mockContacts = [
-      {
-        id: 1,
-        name: "John Smith",
-        title: "Marketing Director",
-        company: "Tech Solutions Inc.",
-        email: "john.smith@techsolutions.com",
-        phone: "+1 (555) 123-4567",
-        address: "123 Business Ave, Suite 100, New York, NY 10001",
-        website: "www.techsolutions.com",
-        cardImage: imageFile ? URL.createObjectURL(imageFile) : null
-      },
-      {
-        id: 2,
-        name: "Sarah Johnson",
-        title: "Senior Developer",
-        company: "Digital Innovations",
-        email: "s.johnson@digitalinnovations.com",
-        phone: "+1 (555) 987-6543",
-        address: "456 Tech Park, Building B, San Francisco, CA 94105",
-        website: "www.digitalinnovations.com",
-        cardImage: imageFile ? URL.createObjectURL(imageFile) : null
-      }
-    ];
-    
-    setContacts(mockContacts);
-    setIsProcessing(false);
-  };
+        const mockContacts = [
+            {
+                id: 1,
+                name: "John Doe",
+                title: "CEO",
+                company: "Acme Corp",
+                email: "john.doe@acmecorp.com",
+                phone: "123-456-7890",
+                address: "123 Main St, Anytown, USA",
+                website: "www.acmecorp.com",
+                imageUrl: "https://via.placeholder.com/150",
+            },
+            {
+                id: 2,
+                name: "Jane Smith",
+                title: "Marketing Director",
+                company: "Globex Inc",
+                email: "jane.smith@globex.com",
+                phone: "098-765-4321",
+                address: "456 Oak Ave, Somewhere, USA",
+                website: "www.globexinc.com",
+                imageUrl: "https://via.placeholder.com/150",
+            },
+        ];
 
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImage(e.target.result);
-        processImage(file);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+        // Placeholder for Lucide icons.
+        // Since lucide-react cannot be easily imported in this setup,
+        // we'll use simple text or remove icon usage where possible.
+        // For a real application, you'd use a build process for icons.
+        const CameraIcon = () => <span className="mr-2">📷</span>;
+        const UploadIcon = () => <span className="mr-2">⬆️</span>;
+        const SaveIcon = () => <span className="mr-2">💾</span>;
+        const Trash2Icon = () => <span className="mr-2">🗑️</span>;
+        const SearchIcon = () => <span className="mr-2">🔍</span>;
+        const SortAscIcon = () => <span className="mr-2">⬆️</span>;
+        const SortDescIcon = () => <span className="mr-2">⬇️</span>;
+        const EyeIcon = () => <span className="mr-2">👁️</span>;
+        const XIcon = () => <span className="mr-2">✖️</span>; // For close button
 
-  const saveContact = (contact) => {
-    setSavedContacts(prev => [...prev, { ...contact, savedAt: new Date().toISOString() }]);
-    setContacts(prev => prev.filter(c => c.id !== contact.id));
-  };
 
-  const deleteContact = (contactId, fromSaved = false) => {
-    if (fromSaved) {
-      setSavedContacts(prev => prev.filter(c => c.id !== contactId));
-    } else {
-      setContacts(prev => prev.filter(c => c.id !== contactId));
-    }
-  };
-
-  const filteredAndSortedContacts = savedContacts
-    .filter(contact => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        contact.name.toLowerCase().includes(searchLower) ||
-        contact.company.toLowerCase().includes(searchLower) ||
-        contact.email.toLowerCase().includes(searchLower) ||
-        contact.phone.includes(searchTerm)
-      );
-    })
-    .sort((a, b) => {
-      let aValue, bValue;
-      
-      switch (sortBy) {
-        case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
-        case 'company':
-          aValue = a.company.toLowerCase();
-          bValue = b.company.toLowerCase();
-          break;
-        case 'date':
-          aValue = new Date(a.savedAt);
-          bValue = new Date(b.savedAt);
-          break;
-        default:
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-  const toggleSort = (field) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
-  };
-
-  const ContactCard = ({ contact, onSave, onDelete, isSaved = false }) => (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-4 border border-gray-200">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <h3 className="font-bold text-lg text-gray-800">{contact.name}</h3>
-          <p className="text-gray-600">{contact.title}</p>
-        </div>
-        <div className="flex space-x-2">
-          {contact.cardImage && (
-            <button
-              onClick={() => setSelectedContact(contact)}
-              className="bg-gray-500 text-white p-2 rounded-full hover:bg-gray-600 transition-colors"
-            >
-              <Eye size={16} />
-            </button>
-          )}
-          {!isSaved && (
-            <button
-              onClick={() => onSave(contact)}
-              className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition-colors"
-            >
-              <Save size={16} />
-            </button>
-          )}
-          <button
-            onClick={() => onDelete(contact.id, isSaved)}
-            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      </div>
-      
-      <div className="space-y-2 text-sm">
-        <div className="flex items-center">
-          <Building className="w-4 h-4 mr-2 text-gray-500" />
-          <span>{contact.company}</span>
-        </div>
-        <div className="flex items-center">
-          <Mail className="w-4 h-4 mr-2 text-gray-500" />
-          <span>{contact.email}</span>
-        </div>
-        <div className="flex items-center">
-          <Phone className="w-4 h-4 mr-2 text-gray-500" />
-          <span>{contact.phone}</span>
-        </div>
-        <div className="flex items-center">
-          <MapPin className="w-4 h-4 mr-2 text-gray-500" />
-          <span className="text-xs">{contact.address}</span>
-        </div>
-        {contact.website && (
-          <div className="flex items-center">
-            <span className="w-4 h-4 mr-2 text-gray-500">🌐</span>
-            <span className="text-blue-600">{contact.website}</span>
-          </div>
-        )}
-      </div>
-      
-      {isSaved && (
-        <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500">
-          Saved on {new Date(contact.savedAt).toLocaleDateString()}
-        </div>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4">
-        <h1 className="text-2xl font-bold text-center">Business Card Scanner</h1>
-        <p className="text-center text-blue-100 mt-2">Scan multiple cards at once</p>
-      </div>
-
-      <div className="bg-white shadow-sm">
-        <div className="flex">
-          <button
-            onClick={() => setShowSaved(false)}
-            className={`flex-1 py-3 px-4 text-center font-medium ${
-              !showSaved ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'
-            }`}
-          >
-            Scan Cards
-          </button>
-          <button
-            onClick={() => setShowSaved(true)}
-            className={`flex-1 py-3 px-4 text-center font-medium ${
-              showSaved ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'
-            }`}
-          >
-            Saved ({savedContacts.length})
-          </button>
-        </div>
-      </div>
-
-      <div className="p-4">
-        {!showSaved ? (
-          <>
-            <div className="mb-6">
-              <div className="flex space-x-4 mb-4">
-                <button
-                  onClick={() => cameraInputRef.current?.click()}
-                  className="flex-1 bg-blue-500 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 hover:bg-blue-600 transition-colors"
-                >
-                  <Camera size={20} />
-                  <span>Take Photo</span>
-                </button>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 bg-green-500 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 hover:bg-green-600 transition-colors"
-                >
-                  <Upload size={20} />
-                  <span>Upload Image</span>
-                </button>
-              </div>
-              
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
+        const ContactCard = ({ contact, onViewImage, onDelete }) => (
+            <div className="bg-white p-4 rounded-lg shadow-md mb-4">
+                <h3 className="text-xl font-semibold">{contact.name}</h3>
+                <p className="text-gray-600">{contact.title} at {contact.company}</p>
+                <div className="mt-2 text-sm text-gray-700">
+                    <p>Email: {contact.email}</p>
+                    <p>Phone: {contact.phone}</p>
+                    {contact.address && <p>Address: {contact.address}</p>}
+                    {contact.website && <p>Website: <a href={`http://${contact.website}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{contact.website}</a></p>}
+                </div>
+                <div className="mt-4 flex space-x-2">
+                    <button
+                        onClick={() => onViewImage(contact.imageUrl)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 flex items-center"
+                    >
+                        <EyeIcon /> View Image
+                    </button>
+                    <button
+                        onClick={() => onDelete(contact.id)}
+                        className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 flex items-center"
+                    >
+                        <Trash2Icon /> Delete
+                    </button>
+                </div>
             </div>
+        );
 
-            {image && (
-              <div className="mb-6">
-                <img
-                  src={image}
-                  alt="Scanned business cards"
-                  className="w-full h-48 object-cover rounded-lg border border-gray-300"
-                />
-              </div>
-            )}
+        const BusinessCardScanner = () => {
+            const [scannedContacts, setScannedContacts] = useState([]);
+            const [savedContacts, setSavedContacts] = useState([]);
+            const [activeTab, setActiveTab] = useState('scan'); // 'scan' or 'saved'
+            const [searchQuery, setSearchQuery] = useState('');
+            const [sortOption, setSortOption] = useState('name-asc'); // e.g., 'name-asc', 'name-desc', 'company-asc'
+            const [viewingImage, setViewingImage] = useState(null); // URL of the image to view
+            const fileInputRef = useRef(null);
 
-            {isProcessing && (
-              <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                <p className="text-gray-600">Processing business cards...</p>
-              </div>
-            )}
+            const handleImageUpload = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const imageUrl = e.target.result;
+                        processImage(imageUrl);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
 
-            {contacts.length > 0 && (
-              <div>
-                <h2 className="text-xl font-bold mb-4 text-gray-800">
-                  Found {contacts.length} Business Card{contacts.length !== 1 ? 's' : ''}
-                </h2>
-                {contacts.map((contact) => (
-                  <ContactCard
-                    key={contact.id}
-                    contact={contact}
-                    onSave={saveContact}
-                    onDelete={deleteContact}
-                  />
-                ))}
-              </div>
-            )}
+            const handleCameraCapture = () => {
+                // In a real application, this would open the device camera.
+                // For this HTML demo, we'll simulate it or prompt for a file.
+                alert("Camera capture functionality needs a more complex setup for browser access. Please use 'Upload Image' for this demo.");
+                // As a fallback, you might want to trigger the file input
+                fileInputRef.current.click();
+            };
 
-            {!image && (
-              <div className="text-center py-12">
-                <div className="bg-blue-50 rounded-lg p-6 max-w-md mx-auto">
-                  <Camera className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                    Scan Multiple Business Cards
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    Take a photo or upload an image with multiple business cards. 
-                    The app will automatically detect and extract contact information 
-                    from each card.
-                  </p>
+            const processImage = (imageUrl) => {
+                // Simulate image processing and contact extraction
+                setScannedContacts([]); // Clear previous scan results
+                setTimeout(() => {
+                    const newContact = {
+                        ...mockContacts[Math.floor(Math.random() * mockContacts.length)],
+                        id: Date.now(), // Unique ID
+                        imageUrl: imageUrl, // Use the uploaded image
+                    };
+                    setScannedContacts([newContact]);
+                }, 2000); // Simulate 2-second processing time
+            };
+
+            const handleSaveContact = (contactToSave) => {
+                setSavedContacts(prev => {
+                    // Check if contact already exists by a simple ID check or name/company combo
+                    if (!prev.some(c => c.id === contactToSave.id)) {
+                        return [...prev, { ...contactToSave, savedDate: new Date() }];
+                    }
+                    return prev;
+                });
+                setScannedContacts(prev => prev.filter(c => c.id !== contactToSave.id)); // Remove from scanned
+            };
+
+            const handleDeleteScanned = (id) => {
+                setScannedContacts(prev => prev.filter(contact => contact.id !== id));
+            };
+
+            const handleDeleteSaved = (id) => {
+                setSavedContacts(prev => prev.filter(contact => contact.id !== id));
+            };
+
+            const filteredAndSortedContacts = savedContacts
+                .filter(contact =>
+                    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    contact.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    contact.phone.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .sort((a, b) => {
+                    const [key, order] = sortOption.split('-');
+                    let valA, valB;
+
+                    if (key === 'name') {
+                        valA = a.name.toLowerCase();
+                        valB = b.name.toLowerCase();
+                    } else if (key === 'company') {
+                        valA = a.company.toLowerCase();
+                        valB = b.company.toLowerCase();
+                    } else if (key === 'savedDate') {
+                        valA = a.savedDate.getTime();
+                        valB = b.savedDate.getTime();
+                    }
+
+                    if (order === 'asc') {
+                        return valA < valB ? -1 : valA > valB ? 1 : 0;
+                    } else { // desc
+                        return valA > valB ? -1 : valA < valB ? 1 : 0;
+                    }
+                });
+
+            return (
+                <div className="flex flex-col md:flex-row bg-gray-100 min-h-screen">
+                    {/* Sidebar / Tabs */}
+                    <div className="w-full md:w-64 bg-gray-800 text-white p-4 flex md:flex-col items-center justify-center md:justify-start">
+                        <h1 className="text-2xl font-bold mb-6 hidden md:block">Card Scanner</h1>
+                        <button
+                            onClick={() => setActiveTab('scan')}
+                            className={`w-full py-3 px-4 rounded-lg text-left mb-2 ${activeTab === 'scan' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+                        >
+                            Scan Cards
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('saved')}
+                            className={`w-full py-3 px-4 rounded-lg text-left ${activeTab === 'saved' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+                        >
+                            Saved Contacts
+                        </button>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="flex-1 p-6">
+                        {activeTab === 'scan' && (
+                            <div>
+                                <h2 className="text-3xl font-bold mb-6 text-gray-800">Scan Business Cards</h2>
+                                <div className="bg-white p-6 rounded-lg shadow-md mb-6 flex flex-col items-center">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                    />
+                                    <button
+                                        onClick={() => fileInputRef.current.click()}
+                                        className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 mb-4 flex items-center justify-center"
+                                    >
+                                        <UploadIcon /> Upload Image
+                                    </button>
+                                    <button
+                                        onClick={handleCameraCapture}
+                                        className="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 flex items-center justify-center"
+                                    >
+                                        <CameraIcon /> Use Camera
+                                    </button>
+                                </div>
+
+                                {scannedContacts.length > 0 && (
+                                    <div className="mt-8">
+                                        <h3 className="text-2xl font-bold mb-4 text-gray-800">Scanned Contacts</h3>
+                                        {scannedContacts.map(contact => (
+                                            <div key={contact.id} className="bg-white p-4 rounded-lg shadow-md mb-4 flex justify-between items-center">
+                                                <div>
+                                                    <h4 className="text-lg font-semibold">{contact.name}</h4>
+                                                    <p className="text-gray-600">{contact.company}</p>
+                                                </div>
+                                                <div className="flex space-x-2">
+                                                    <button
+                                                        onClick={() => handleSaveContact(contact)}
+                                                        className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 flex items-center"
+                                                    >
+                                                        <SaveIcon /> Save
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteScanned(contact.id)}
+                                                        className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 flex items-center"
+                                                    >
+                                                        <Trash2Icon /> Delete
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setViewingImage(contact.imageUrl)}
+                                                        className="bg-gray-500 text-white px-3 py-1 rounded-md hover:bg-gray-600 flex items-center"
+                                                    >
+                                                        <EyeIcon />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'saved' && (
+                            <div>
+                                <h2 className="text-3xl font-bold mb-6 text-gray-800">Saved Contacts</h2>
+                                <div className="bg-white p-6 rounded-lg shadow-md mb-6 flex flex-wrap gap-4">
+                                    <div className="flex-grow">
+                                        <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <SearchIcon className="h-5 w-5 text-gray-400" />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                id="search"
+                                                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                placeholder="Search contacts..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex-grow">
+                                        <label htmlFor="sort" className="block text-sm font-medium text-gray-700 mb-1">Sort by</label>
+                                        <select
+                                            id="sort"
+                                            className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            value={sortOption}
+                                            onChange={(e) => setSortOption(e.target.value)}
+                                        >
+                                            <option value="name-asc">Name (A-Z)</option>
+                                            <option value="name-desc">Name (Z-A)</option>
+                                            <option value="company-asc">Company (A-Z)</option>
+                                            <option value="company-desc">Company (Z-A)</option>
+                                            <option value="savedDate-desc">Recently Saved</option>
+                                            <option value="savedDate-asc">Oldest Saved</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {filteredAndSortedContacts.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {filteredAndSortedContacts.map(contact => (
+                                            <ContactCard
+                                                key={contact.id}
+                                                contact={contact}
+                                                onViewImage={setViewingImage}
+                                                onDelete={handleDeleteSaved}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-600">No saved contacts found.</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Image Viewer Modal */}
+                    {viewingImage && (
+                        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                            <div className="relative bg-white p-4 rounded-lg shadow-xl max-w-2xl max-h-[90vh] overflow-auto">
+                                <button
+                                    onClick={() => setViewingImage(null)}
+                                    className="absolute top-2 right-2 text-gray-800 hover:text-gray-600 text-2xl"
+                                >
+                                    <XIcon />
+                                </button>
+                                <img src={viewingImage} alt="Business Card" className="max-w-full h-auto" />
+                            </div>
+                        </div>
+                    )}
                 </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            <div className="mb-6 space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search contacts..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X size={16} />
-                  </button>
-                )}
-              </div>
-              
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => toggleSort('name')}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg border ${
-                    sortBy === 'name' 
-                      ? 'bg-blue-500 text-white border-blue-500' 
-                      : 'bg-white text-gray-700 border-gray-300'
-                  }`}
-                >
-                  <span>Name</span>
-                  {sortBy === 'name' && (sortOrder === 'asc' ? <SortAsc size={14} /> : <SortDesc size={14} />)}
-                </button>
-                <button
-                  onClick={() => toggleSort('company')}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg border ${
-                    sortBy === 'company' 
-                      ? 'bg-blue-500 text-white border-blue-500' 
-                      : 'bg-white text-gray-700 border-gray-300'
-                  }`}
-                >
-                  <span>Company</span>
-                  {sortBy === 'company' && (sortOrder === 'asc' ? <SortAsc size={14} /> : <SortDesc size={14} />)}
-                </button>
-                <button
-                  onClick={() => toggleSort('date')}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg border ${
-                    sortBy === 'date' 
-                      ? 'bg-blue-500 text-white border-blue-500' 
-                      : 'bg-white text-gray-700 border-gray-300'
-                  }`}
-                >
-                  <Calendar size={14} />
-                  <span>Date</span>
-                  {sortBy === 'date' && (sortOrder === 'asc' ? <SortAsc size={14} /> : <SortDesc size={14} />)}
-                </button>
-              </div>
-            </div>
+            );
+        };
 
-            <div>
-              <h2 className="text-xl font-bold mb-4 text-gray-800">
-                {searchTerm ? `Search Results (${filteredAndSortedContacts.length})` : `Saved Contacts (${savedContacts.length})`}
-              </h2>
-              {filteredAndSortedContacts.length > 0 ? (
-                filteredAndSortedContacts.map((contact) => (
-                  <ContactCard
-                    key={contact.id}
-                    contact={contact}
-                    onDelete={deleteContact}
-                    isSaved={true}
-                  />
-                ))
-              ) : searchTerm ? (
-                <div className="text-center py-12">
-                  <div className="bg-yellow-50 rounded-lg p-6 max-w-md mx-auto">
-                    <Search className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                      No Results Found
-                    </h3>
-                    <p className="text-gray-600 text-sm">
-                      No contacts match your search "{searchTerm}". Try different keywords.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="bg-gray-50 rounded-lg p-6 max-w-md mx-auto">
-                    <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                      No Saved Contacts
-                    </h3>
-                    <p className="text-gray-600 text-sm">
-                      Scan business cards and save contacts to see them here.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-
-      {selectedContact && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-semibold">{selectedContact.name}'s Business Card</h3>
-              <button
-                onClick={() => setSelectedContact(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            <div className="p-4">
-              {selectedContact.cardImage && (
-                <img
-                  src={selectedContact.cardImage}
-                  alt={`${selectedContact.name}'s business card`}
-                  className="w-full h-auto rounded-lg border border-gray-200"
-                />
-              )}
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center">
-                  <Building className="w-4 h-4 mr-2 text-gray-500" />
-                  <span>{selectedContact.company}</span>
-                </div>
-                <div className="flex items-center">
-                  <Mail className="w-4 h-4 mr-2 text-gray-500" />
-                  <span>{selectedContact.email}</span>
-                </div>
-                <div className="flex items-center">
-                  <Phone className="w-4 h-4 mr-2 text-gray-500" />
-                  <span>{selectedContact.phone}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
+        // Render the React component to the 'root' div
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<BusinessCardScanner />);
+    </script>
+</body>
+</html>
