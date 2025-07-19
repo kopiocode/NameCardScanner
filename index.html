@@ -14,20 +14,452 @@
     text here
     <script type="text/babel">
         const { useState, useRef } = React;
-        const { Camera, Upload, User } = LucideReact;
+        const { Camera, Upload, User, Phone, Mail, Building, MapPin, Save, Trash2, Eye, Search, SortAsc, SortDesc, Calendar, X } = LucideReact;
         
-        function App() {
-            // Your component code here
-            testing
-            return (
-                <div>
-                    <h1>My React App</h1>
-                    <Camera size={24} />
+const BusinessCardScanner = () => {
+  const [image, setImage] = useState(null);
+  const [contacts, setContacts] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [savedContacts, setSavedContacts] = useState([]);
+  const [showSaved, setShowSaved] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [selectedContact, setSelectedContact] = useState(null);
+  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+
+  const processImage = async (imageFile) => {
+    setIsProcessing(true);
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const mockContacts = [
+      {
+        id: 1,
+        name: "John Smith",
+        title: "Marketing Director",
+        company: "Tech Solutions Inc.",
+        email: "john.smith@techsolutions.com",
+        phone: "+1 (555) 123-4567",
+        address: "123 Business Ave, Suite 100, New York, NY 10001",
+        website: "www.techsolutions.com",
+        cardImage: imageFile ? URL.createObjectURL(imageFile) : null
+      },
+      {
+        id: 2,
+        name: "Sarah Johnson",
+        title: "Senior Developer",
+        company: "Digital Innovations",
+        email: "s.johnson@digitalinnovations.com",
+        phone: "+1 (555) 987-6543",
+        address: "456 Tech Park, Building B, San Francisco, CA 94105",
+        website: "www.digitalinnovations.com",
+        cardImage: imageFile ? URL.createObjectURL(imageFile) : null
+      }
+    ];
+    
+    setContacts(mockContacts);
+    setIsProcessing(false);
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImage(e.target.result);
+        processImage(file);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const saveContact = (contact) => {
+    setSavedContacts(prev => [...prev, { ...contact, savedAt: new Date().toISOString() }]);
+    setContacts(prev => prev.filter(c => c.id !== contact.id));
+  };
+
+  const deleteContact = (contactId, fromSaved = false) => {
+    if (fromSaved) {
+      setSavedContacts(prev => prev.filter(c => c.id !== contactId));
+    } else {
+      setContacts(prev => prev.filter(c => c.id !== contactId));
+    }
+  };
+
+  const filteredAndSortedContacts = savedContacts
+    .filter(contact => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        contact.name.toLowerCase().includes(searchLower) ||
+        contact.company.toLowerCase().includes(searchLower) ||
+        contact.email.toLowerCase().includes(searchLower) ||
+        contact.phone.includes(searchTerm)
+      );
+    })
+    .sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'company':
+          aValue = a.company.toLowerCase();
+          bValue = b.company.toLowerCase();
+          break;
+        case 'date':
+          aValue = new Date(a.savedAt);
+          bValue = new Date(b.savedAt);
+          break;
+        default:
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+  const toggleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const ContactCard = ({ contact, onSave, onDelete, isSaved = false }) => (
+    <div className="bg-white rounded-lg shadow-md p-4 mb-4 border border-gray-200">
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex-1">
+          <h3 className="font-bold text-lg text-gray-800">{contact.name}</h3>
+          <p className="text-gray-600">{contact.title}</p>
+        </div>
+        <div className="flex space-x-2">
+          {contact.cardImage && (
+            <button
+              onClick={() => setSelectedContact(contact)}
+              className="bg-gray-500 text-white p-2 rounded-full hover:bg-gray-600 transition-colors"
+            >
+              <Eye size={16} />
+            </button>
+          )}
+          {!isSaved && (
+            <button
+              onClick={() => onSave(contact)}
+              className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition-colors"
+            >
+              <Save size={16} />
+            </button>
+          )}
+          <button
+            onClick={() => onDelete(contact.id, isSaved)}
+            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+      
+      <div className="space-y-2 text-sm">
+        <div className="flex items-center">
+          <Building className="w-4 h-4 mr-2 text-gray-500" />
+          <span>{contact.company}</span>
+        </div>
+        <div className="flex items-center">
+          <Mail className="w-4 h-4 mr-2 text-gray-500" />
+          <span>{contact.email}</span>
+        </div>
+        <div className="flex items-center">
+          <Phone className="w-4 h-4 mr-2 text-gray-500" />
+          <span>{contact.phone}</span>
+        </div>
+        <div className="flex items-center">
+          <MapPin className="w-4 h-4 mr-2 text-gray-500" />
+          <span className="text-xs">{contact.address}</span>
+        </div>
+        {contact.website && (
+          <div className="flex items-center">
+            <span className="w-4 h-4 mr-2 text-gray-500">🌐</span>
+            <span className="text-blue-600">{contact.website}</span>
+          </div>
+        )}
+      </div>
+      
+      {isSaved && (
+        <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500">
+          Saved on {new Date(contact.savedAt).toLocaleDateString()}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4">
+        <h1 className="text-2xl font-bold text-center">Business Card Scanner</h1>
+        <p className="text-center text-blue-100 mt-2">Scan multiple cards at once</p>
+      </div>
+
+      <div className="bg-white shadow-sm">
+        <div className="flex">
+          <button
+            onClick={() => setShowSaved(false)}
+            className={`flex-1 py-3 px-4 text-center font-medium ${
+              !showSaved ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'
+            }`}
+          >
+            Scan Cards
+          </button>
+          <button
+            onClick={() => setShowSaved(true)}
+            className={`flex-1 py-3 px-4 text-center font-medium ${
+              showSaved ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'
+            }`}
+          >
+            Saved ({savedContacts.length})
+          </button>
+        </div>
+      </div>
+
+      <div className="p-4">
+        {!showSaved ? (
+          <>
+            <div className="mb-6">
+              <div className="flex space-x-4 mb-4">
+                <button
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="flex-1 bg-blue-500 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 hover:bg-blue-600 transition-colors"
+                >
+                  <Camera size={20} />
+                  <span>Take Photo</span>
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 bg-green-500 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 hover:bg-green-600 transition-colors"
+                >
+                  <Upload size={20} />
+                  <span>Upload Image</span>
+                </button>
+              </div>
+              
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+
+            {image && (
+              <div className="mb-6">
+                <img
+                  src={image}
+                  alt="Scanned business cards"
+                  className="w-full h-48 object-cover rounded-lg border border-gray-300"
+                />
+              </div>
+            )}
+
+            {isProcessing && (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                <p className="text-gray-600">Processing business cards...</p>
+              </div>
+            )}
+
+            {contacts.length > 0 && (
+              <div>
+                <h2 className="text-xl font-bold mb-4 text-gray-800">
+                  Found {contacts.length} Business Card{contacts.length !== 1 ? 's' : ''}
+                </h2>
+                {contacts.map((contact) => (
+                  <ContactCard
+                    key={contact.id}
+                    contact={contact}
+                    onSave={saveContact}
+                    onDelete={deleteContact}
+                  />
+                ))}
+              </div>
+            )}
+
+            {!image && (
+              <div className="text-center py-12">
+                <div className="bg-blue-50 rounded-lg p-6 max-w-md mx-auto">
+                  <Camera className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    Scan Multiple Business Cards
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    Take a photo or upload an image with multiple business cards. 
+                    The app will automatically detect and extract contact information 
+                    from each card.
+                  </p>
                 </div>
-            );
-        }
-        
-        ReactDOM.render(<App />, document.getElementById('root'));
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="mb-6 space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search contacts..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+              
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => toggleSort('name')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg border ${
+                    sortBy === 'name' 
+                      ? 'bg-blue-500 text-white border-blue-500' 
+                      : 'bg-white text-gray-700 border-gray-300'
+                  }`}
+                >
+                  <span>Name</span>
+                  {sortBy === 'name' && (sortOrder === 'asc' ? <SortAsc size={14} /> : <SortDesc size={14} />)}
+                </button>
+                <button
+                  onClick={() => toggleSort('company')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg border ${
+                    sortBy === 'company' 
+                      ? 'bg-blue-500 text-white border-blue-500' 
+                      : 'bg-white text-gray-700 border-gray-300'
+                  }`}
+                >
+                  <span>Company</span>
+                  {sortBy === 'company' && (sortOrder === 'asc' ? <SortAsc size={14} /> : <SortDesc size={14} />)}
+                </button>
+                <button
+                  onClick={() => toggleSort('date')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg border ${
+                    sortBy === 'date' 
+                      ? 'bg-blue-500 text-white border-blue-500' 
+                      : 'bg-white text-gray-700 border-gray-300'
+                  }`}
+                >
+                  <Calendar size={14} />
+                  <span>Date</span>
+                  {sortBy === 'date' && (sortOrder === 'asc' ? <SortAsc size={14} /> : <SortDesc size={14} />)}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-bold mb-4 text-gray-800">
+                {searchTerm ? `Search Results (${filteredAndSortedContacts.length})` : `Saved Contacts (${savedContacts.length})`}
+              </h2>
+              {filteredAndSortedContacts.length > 0 ? (
+                filteredAndSortedContacts.map((contact) => (
+                  <ContactCard
+                    key={contact.id}
+                    contact={contact}
+                    onDelete={deleteContact}
+                    isSaved={true}
+                  />
+                ))
+              ) : searchTerm ? (
+                <div className="text-center py-12">
+                  <div className="bg-yellow-50 rounded-lg p-6 max-w-md mx-auto">
+                    <Search className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                      No Results Found
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      No contacts match your search "{searchTerm}". Try different keywords.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="bg-gray-50 rounded-lg p-6 max-w-md mx-auto">
+                    <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                      No Saved Contacts
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      Scan business cards and save contacts to see them here.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {selectedContact && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-semibold">{selectedContact.name}'s Business Card</h3>
+              <button
+                onClick={() => setSelectedContact(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-4">
+              {selectedContact.cardImage && (
+                <img
+                  src={selectedContact.cardImage}
+                  alt={`${selectedContact.name}'s business card`}
+                  className="w-full h-auto rounded-lg border border-gray-200"
+                />
+              )}
+              <div className="mt-4 space-y-2 text-sm">
+                <div className="flex items-center">
+                  <Building className="w-4 h-4 mr-2 text-gray-500" />
+                  <span>{selectedContact.company}</span>
+                </div>
+                <div className="flex items-center">
+                  <Mail className="w-4 h-4 mr-2 text-gray-500" />
+                  <span>{selectedContact.email}</span>
+                </div>
+                <div className="flex items-center">
+                  <Phone className="w-4 h-4 mr-2 text-gray-500" />
+                  <span>{selectedContact.phone}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
     </script>
 </body>
 </html>
